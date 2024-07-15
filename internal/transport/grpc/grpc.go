@@ -11,9 +11,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const forbiddenLoginSymbols string = "!@#$%^&*()-_+="
+const forbiddenLoginSymbols string = `"!@#$%^&*()-_+=`
 
-type serverAPI struct {
+type grpcAPI struct {
 	pb.UnimplementedAuthServer
 	a Auth
 }
@@ -23,7 +23,7 @@ type Auth interface {
 	LoginUser(ctx context.Context, login string, password string) (string, error)
 }
 
-func (s *serverAPI) Register(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
+func (s *grpcAPI) Register(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 
 	// make validation input params
 	_, err := mail.ParseAddress(in.Email)
@@ -53,7 +53,7 @@ func (s *serverAPI) Register(ctx context.Context, in *pb.RegisterUserRequest) (*
 	return &resp, nil
 }
 
-func (s *serverAPI) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginuserResponse, error) {
+func (s *grpcAPI) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginuserResponse, error) {
 	token, err := s.a.LoginUser(ctx, in.Login, in.Password)
 	if err != nil {
 		// todo
