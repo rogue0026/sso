@@ -8,6 +8,7 @@ import (
 
 	"github.com/rogue0026/sso/internal/domain/models"
 	"github.com/rogue0026/sso/internal/lib/token"
+	"github.com/rogue0026/sso/internal/storage"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -47,19 +48,18 @@ func (s *Service) RegisterNewUser(ctx context.Context, login string, password st
 
 func (s *Service) LoginUser(ctx context.Context, login string, password string, email string) (string, error) {
 	const fn = "services.auth.LoginUser"
-	// 1. проверить, есть ли в базе данных пользователь с указанным логином и если есть, то проверить правильность введенного пароля
-	// 2. Если пароль введен неправильно, то вернуть ошибку
-	// 3. Если пароль введен правильно, то сгенерировать jwt-токен и вернуть его пользователю
+	// searching user in database
 	user, err := s.Fetcher.Fetch(ctx, login, email)
 	if err != nil {
-		// todo
-		// user not found error
-		// internal error in persistent layer
-		return "", fmt.Errorf("%s: %w", fn, err)
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return "", storage.ErrUserNotFound
+		} else {
+			return "", fmt.Errorf("%s: %w", fn, err)
+		}
 	}
+
 	// check user credentials
 	if err = bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
-		// send empty string and invalid user credentials error
 		return "", ErrInvalidUserCredentials
 	}
 
