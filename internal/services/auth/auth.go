@@ -7,17 +7,18 @@ import (
 	"log/slog"
 
 	"github.com/rogue0026/sso/internal/domain/models"
+	"github.com/rogue0026/sso/internal/lib/token"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var ErrInvalidUserCredentials = errors.New("invalid user credentials")
 
 type UserSaver interface {
-	Save(u models.User) (int64, error)
+	Save(ctx context.Context, u models.User) (int64, error)
 }
 
 type UserFetcher interface {
-	Fetch(login string, email string) (models.User, error)
+	Fetch(ctx context.Context, login string, email string) (models.User, error)
 }
 
 type Service struct {
@@ -32,7 +33,7 @@ func (s *Service) RegisterNewUser(ctx context.Context, login string, password st
 	if err != nil {
 		return int64(0), fmt.Errorf("%s:%w", fn, err)
 	}
-	userId, err := s.Saver.Save(
+	userId, err := s.Saver.Save(ctx,
 		models.User{
 			Login:    login,
 			PassHash: passHash,
@@ -49,7 +50,7 @@ func (s *Service) LoginUser(ctx context.Context, login string, password string, 
 	// 1. проверить, есть ли в базе данных пользователь с указанным логином и если есть, то проверить правильность введенного пароля
 	// 2. Если пароль введен неправильно, то вернуть ошибку
 	// 3. Если пароль введен правильно, то сгенерировать jwt-токен и вернуть его пользователю
-	user, err := s.Fetcher.Fetch(login, email)
+	user, err := s.Fetcher.Fetch(ctx, login, email)
 	if err != nil {
 		// todo
 		// user not found error
@@ -60,10 +61,13 @@ func (s *Service) LoginUser(ctx context.Context, login string, password string, 
 	if err = bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		// send empty string and invalid user credentials error
 		return "", ErrInvalidUserCredentials
-	} else {
-		// generate jwt token and send it to client
-
 	}
-	// if ok - generate jwt token and send it to user
-	return "", nil
+
+	// generate jwt token and send it back to client
+	tokenStr, err := token.NewJWT(login, email)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return tokenStr, nil
 }

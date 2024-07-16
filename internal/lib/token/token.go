@@ -17,6 +17,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// NewJWT generates new jwt token based on user login and email
 func NewJWT(login string, email string) (string, error) {
 	const fn = "lib.token.NewJWT"
 	c := Claims{
@@ -42,6 +43,7 @@ func NewJWT(login string, email string) (string, error) {
 	return ss, nil
 }
 
+// Validate validates signed token string. If token was corrupted, Validate returns error.
 func Validate(token string) error {
 	const fn = "lib.token.Validate"
 	c := Claims{}
