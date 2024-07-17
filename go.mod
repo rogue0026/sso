@@ -8,6 +8,7 @@ require (
 	github.com/rogue0026/proto v0.0.0-20240715184137-2fcbec734778
 	golang.org/x/crypto v0.25.0
 	google.golang.org/grpc v1.65.0
+	modernc.org/sqlite v1.30.2
 )
 
 require (
@@ -29,7 +30,6 @@ require (
 	modernc.org/libc v1.52.1 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.30.2 // indirect
 	modernc.org/strutil v1.2.0 // indirect
 	modernc.org/token v1.1.0 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
