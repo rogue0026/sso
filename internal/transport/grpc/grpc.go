@@ -2,11 +2,15 @@ package grpc
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"net/mail"
 	"strings"
 	"unicode/utf8"
 
 	pb "github.com/rogue0026/proto/gen/go/sso"
+	"github.com/rogue0026/sso/internal/services/auth"
+	"github.com/rogue0026/sso/internal/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,8 +18,17 @@ import (
 const forbiddenLoginSymbols string = `"!@#$%^&*()-_+=`
 
 type grpcAPI struct {
+	Logger *slog.Logger
 	pb.UnimplementedAuthServer
-	a Auth
+	auth Auth
+}
+
+func NewAPI(logger *slog.Logger, service Auth) *grpcAPI {
+	api := grpcAPI{
+		Logger: logger,
+		auth:   service,
+	}
+	return &api
 }
 
 type Auth interface {
@@ -41,7 +54,7 @@ func (s *grpcAPI) Register(ctx context.Context, in *pb.RegisterUserRequest) (*pb
 	}
 
 	// if validation ok, send call to service layer
-	userId, err := s.a.RegisterNewUser(ctx, in.Login, in.Password, in.Email)
+	userId, err := s.auth.RegisterNewUser(ctx, in.Login, in.Password, in.Email)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
@@ -54,12 +67,14 @@ func (s *grpcAPI) Register(ctx context.Context, in *pb.RegisterUserRequest) (*pb
 }
 
 func (s *grpcAPI) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginuserResponse, error) {
-	token, err := s.a.LoginUser(ctx, in.Login, in.Password)
+	token, err := s.auth.LoginUser(ctx, in.Login, in.Password)
 	if err != nil {
-		// todo
-		// 1. Неверный логин или пароль
-		// 2. Пользователь не найден => неверный логин или пароль (это усложнит жизнь злоумышленникам, пытающимся получить неправомерный доступ к системе)
-		// 3. Внутрення ошибка сервиса
+		if errors.Is(err, auth.ErrInvalidUserCredentials) {
+			return nil, status.Error(codes.Unauthenticated, auth.ErrInvalidUserCredentials.Error())
+		}
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, storage.ErrUserNotFound.Error())
+		}
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
