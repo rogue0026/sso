@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/rogue0026/sso/internal/app"
 	"github.com/rogue0026/sso/internal/config"
 )
 
@@ -14,14 +15,21 @@ const (
 )
 
 func main() {
-	// init config
+
+	// init app config
 	appCfg := config.MustLoad()
-	// init log
+
+	// init app logger
 	log := setupLogger(appCfg.Env)
 	log.Debug("logger initialized")
-	// init storage
 
-	// init application
+	application, err := app.New(appCfg, log)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	log.Debug("starting listening at ", "port", appCfg.GRPC.Port)
+	application.MustRun(appCfg.GRPC.Port)
 }
 
 func setupLogger(env string) *slog.Logger {

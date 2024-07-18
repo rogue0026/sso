@@ -19,7 +19,7 @@ type UserSaver interface {
 }
 
 type UserFetcher interface {
-	Fetch(ctx context.Context, login string, email string) (models.User, error)
+	Fetch(ctx context.Context, login string) (*models.User, error)
 }
 
 type Service struct {
@@ -59,11 +59,11 @@ func (s *Service) RegisterNewUser(ctx context.Context, login string, password st
 	return userId, nil
 }
 
-func (s *Service) LoginUser(ctx context.Context, login string, password string, email string) (string, error) {
+func (s *Service) LoginUser(ctx context.Context, login string, password string) (string, error) {
 	const fn = "services.auth.LoginUser"
 	l := s.Logger.With("func", fn)
 	// searching user in database
-	user, err := s.Fetcher.Fetch(ctx, login, email)
+	user, err := s.Fetcher.Fetch(ctx, login)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
 			return "", storage.ErrUserNotFound
@@ -80,7 +80,7 @@ func (s *Service) LoginUser(ctx context.Context, login string, password string, 
 	}
 
 	// generate jwt token and send it back to client
-	tokenStr, err := token.NewJWT(login, email)
+	tokenStr, err := token.NewJWT(login)
 	if err != nil {
 		l.Error(err.Error())
 		return "", fmt.Errorf("%s: %w", fn, err)

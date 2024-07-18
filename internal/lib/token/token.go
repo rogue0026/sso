@@ -13,16 +13,14 @@ var ErrBadSecretKey = errors.New("bad secret key")
 
 type Claims struct {
 	Login string
-	Email string
 	jwt.RegisteredClaims
 }
 
 // NewJWT generates new jwt token based on user login and email
-func NewJWT(login string, email string) (string, error) {
+func NewJWT(login string) (string, error) {
 	const fn = "lib.token.NewJWT"
 	c := Claims{
 		Login: login,
-		Email: email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)),
 		},

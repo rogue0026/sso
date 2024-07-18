@@ -19,14 +19,14 @@ type GRPC struct {
 	Port int `yaml:"port"`
 }
 
-func MustLoad() *Config {
+func MustLoad() Config {
 	p := fetchPath()
 	c := Config{}
 	if err := cleanenv.ReadConfig(p, &c); err != nil {
 		panic(err.Error())
 	}
 
-	return &c
+	return c
 }
 
 func fetchPath() string {

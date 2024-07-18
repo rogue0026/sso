@@ -59,12 +59,12 @@ func (s *Storage) Save(ctx context.Context, u models.User) (int64, error) {
 	return lastId, nil
 }
 
-func (s *Storage) Fetch(ctx context.Context, login string, email string) (*models.User, error) {
+func (s *Storage) Fetch(ctx context.Context, login string) (*models.User, error) {
 	const fn = "storage.sqlite.Fetch"
 	l := s.logger.With("func", fn)
-	q := `SELECT login, pass_hash, email FROM users WHERE login = ? AND email = ?;`
+	q := `SELECT login, pass_hash FROM users WHERE login = ? AND email = ?;`
 	u := models.User{}
-	if err := s.pool.QueryRowContext(ctx, q, login, email).Scan(u.Login, u.PassHash, u.Email); err != nil {
+	if err := s.pool.QueryRowContext(ctx, q, login).Scan(u.Login, u.PassHash, u.Email); err != nil {
 		l.Error(err.Error())
 		return nil, fmt.Errorf("%s: %w", fn, err)
 	}
